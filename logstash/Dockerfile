@@ -1,4 +1,4 @@
-FROM logstash:5.6.6
+FROM logstash:8.13.4
 
 COPY ./config/logstash.conf /etc/logstash/conf.d/
 # Add your logstash plugins setup here

@@ -1,27 +1,47 @@
-elasticsearch:
-  image: elasticsearch:5.6.6
-  command: elasticsearch
-  environment:
-    - network.host=0.0.0.0
-  ports:
-    - "9200:9200"
-    - "9300:9300"
-logstash:
-  build: logstash/
-  command: logstash -f /etc/logstash/conf.d/logstash.conf
-  ports:
-    - "5000:5000"
-  links:
-    - elasticsearch
-    - rabbitmq
-kibana:
-  build: kibana/
-  ports:
-    - "5601:5601"
-  links:
-    - elasticsearch
-rabbitmq:
-  build: rabbitmq/
-  ports:
-    - "5672:5672"
-    - "15672:15672"
+services:
+  elasticsearch:
+    image: elasticsearch:8.13.4
+    platform: linux/arm64
+    command: elasticsearch
+    privileged: true
+    environment:
+      network.host: 0.0.0.0
+      node.name: elasticsearch
+      ES_JAVA_OPTS: -Xms1024m -Xmx1024m
+      # Bootstrap password.
+      # Used to initialize the keystore during the initial startup of
+      # Elasticsearch. Ignored on subsequent runs.
+      ELASTIC_PASSWORD: ${ELASTIC_PASSWORD:-}
+      # Use single node discovery in order to disable production mode and avoid bootstrap checks.
+      # see: https://www.elastic.co/guide/en/elasticsearch/reference/current/bootstrap-checks.html
+      discovery.type: single-node
+    ports:
+      - 9200:9200
+      - 9300:9300
+
+  logstash:
+    build: logstash/
+    platform: linux/arm64
+    command: logstash -f /etc/logstash/conf.d/logstash.conf
+    ports:
+      - 5000:5000
+    links:
+      - elasticsearch
+      - rabbitmq
+
+  kibana:
+    build: kibana/
+    platform: linux/arm64
+    depends_on:
+      - elasticsearch
+    ports:
+      - 5601:5601
+    links:
+      - elasticsearch
+
+  rabbitmq:
+    build: rabbitmq/
+    platform: linux/arm64
+    ports:
+      - 5672:5672
+      - 15672:15672
